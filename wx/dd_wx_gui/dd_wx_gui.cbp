@@ -14,6 +14,7 @@
 				<Option projectLinkerOptionsRelation="2" />
 				<Compiler>
 					<Add option="-O2" />
+					<Add option="-std=c++11" />
 					<Add directory="$(#wx)/lib/gcc_lib/mswu" />
 				</Compiler>
 				<ResourceCompiler>
@@ -59,8 +60,8 @@
 			<Add library="libodbc32.a" />
 		</Linker>
 		<Unit filename="main.cpp" />
-		<Unit filename="mainFrame.cpp" />
-		<Unit filename="mainFrame.h" />
+		<Unit filename="mainWindow.cpp" />
+		<Unit filename="mainWindow.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />
