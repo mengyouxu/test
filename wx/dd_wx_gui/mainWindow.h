@@ -17,8 +17,8 @@
 #include <wx/colour.h>
 #include <wx/settings.h>
 #include <wx/textctrl.h>
-#include <wx/button.h>
 #include <wx/sizer.h>
+#include <wx/button.h>
 #include <wx/gauge.h>
 #include <wx/spinctrl.h>
 #include <wx/combobox.h>
@@ -41,26 +41,27 @@ class MyDialog : public wxDialog
 		wxStaticText* m_staticText2;
 		wxTextCtrl* textCtrlOutputFile;
 		wxButton* buttonGetOutputFile;
-		wxGauge* m_gauge1;
+		wxGauge* gaugeProgress;
 		wxStaticText* m_staticText6;
-		wxSpinCtrl* m_spinCtrl5;
-		wxComboBox* m_comboBox1;
+		wxSpinCtrl* spinCtrlBeginPos;
 		wxStaticText* m_staticText7;
-		wxSpinCtrl* m_spinCtrl6;
-		wxComboBox* m_comboBox2;
+		wxSpinCtrl* spinCtrlCopySize;
+		wxComboBox* comboBoxUnit;
 		wxButton* m_button6;
+		wxButton* m_button5;
 		wxButton* m_button7;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnChooseInputFile( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnChooseOutputFile( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnRun( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnCancel( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnQuit( wxCommandEvent& event ) { event.Skip(); }
 		
 	
 	public:
 		
-		MyDialog( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 369,259 ), long style = wxDEFAULT_DIALOG_STYLE ); 
+		MyDialog( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 403,355 ), long style = wxDEFAULT_DIALOG_STYLE ); 
 		~MyDialog();
 	
 };
