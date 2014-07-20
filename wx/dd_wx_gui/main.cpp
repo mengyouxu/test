@@ -131,7 +131,7 @@ IMPLEMENT_APP(myApp);
 
 bool myApp::OnInit()
 {
-    mainWindow *mWindow = new mainWindow(wxT("h"));
+    mainWindow *mWindow = new mainWindow(wxT("dd GUI"));
     mWindow->Show(true);
     return true;
 }
