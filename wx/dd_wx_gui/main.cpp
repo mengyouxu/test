@@ -4,7 +4,6 @@
 #include "file_oprations.h"
 class mainWindow : public MyDialog{
 public:
-    mainWindow();
     mainWindow(const wxString &title);
     void setProgressValue(int val);
 private:
@@ -13,12 +12,28 @@ private:
     void OnRun( wxCommandEvent& event );
     void OnCancel( wxCommandEvent& event );
     void OnQuit( wxCommandEvent& event );
+    void OnClose(wxCloseEvent& event);
 
     void OnProgressUpdate(wxCommandEvent &event);
+
+    DECLARE_EVENT_TABLE()
 };
-void mainWindow::OnQuit(wxCommandEvent &evt){
-    this->Close();
+BEGIN_EVENT_TABLE(mainWindow,wxDialog)
+	EVT_CLOSE(mainWindow::OnClose)
+END_EVENT_TABLE()
+
+void mainWindow::OnQuit(wxCommandEvent &evt)
+{
+	printf("%s():L%d\n",__func__,__LINE__);
+    this->Destroy();
 }
+
+void mainWindow::OnClose(wxCloseEvent& event)
+{
+	printf("%s():L%d\n",__func__,__LINE__);
+	this->Destroy();
+}
+
 void mainWindow::setProgressValue(int val){
 	this->gaugeProgress->SetValue(val);
 }
@@ -82,7 +97,7 @@ void mainWindow::OnRun(wxCommandEvent &evt)
 	//void (wxGauge::*set_progress)(int) = &wxGauge::SetValue;
 	cutter->setGauge(this->gaugeProgress);
 	cutter->Run();
-
+	printf("%s():L%d\n",__func__,__LINE__);
 }
 
 void mainWindow::OnCancel(wxCommandEvent &evt)
@@ -95,23 +110,18 @@ void mainWindow::OnProgressUpdate(wxCommandEvent &event)
 	this->gaugeProgress->SetValue(50);
 
 }
-mainWindow::mainWindow()
-        :MyDialog(nullptr, wxID_ANY,
-				wxT("Hello World"), wxDefaultPosition,
-				wxSize( 450,333 ), wxDEFAULT_DIALOG_STYLE )
-{
 
-}
 mainWindow::mainWindow(const wxString &title)
         :MyDialog(nullptr, wxID_ANY, title,
 				wxDefaultPosition,  wxSize( 450,333 ),
-				wxDEFAULT_DIALOG_STYLE )
+				wxDEFAULT_DIALOG_STYLE)
 {
 
 }
 class myApp : public wxApp{
 public:
     virtual bool OnInit();
+    virtual int OnExit();
 private:
 
 };
@@ -124,4 +134,8 @@ bool myApp::OnInit()
     mainWindow *mWindow = new mainWindow(wxT("h"));
     mWindow->Show(true);
     return true;
+}
+int myApp::OnExit()
+{
+    printf("OnExit()\n");
 }
