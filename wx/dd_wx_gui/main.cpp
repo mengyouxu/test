@@ -138,4 +138,5 @@ bool myApp::OnInit()
 int myApp::OnExit()
 {
     printf("OnExit()\n");
+    return 0;
 }
