@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hello">Hello World, VideoplayerDemoActivity!</string>
+    <string name="app_name">video player demo</string>
+    <string name="LeftTop">LeftTop</string>
+    <string name="Middle720p">Middle720p</string>
+    <string name="FullScreen">FullScreen</string>
+</resources>
