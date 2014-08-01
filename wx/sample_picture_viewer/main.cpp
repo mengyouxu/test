@@ -60,7 +60,13 @@ void myWindow::OnOpenFile(wxCommandEvent &evt)
     dlg->Destroy();
     wxImage::AddHandler(new wxJPEGHandler);
     wxImage img;
+
     int w,h;
+
+    wxScreenDC dc;
+    dc.GetSize(&w,&h); //  获取当前Screen 大小
+    printf("Current Screen : %d x %d\n",w,h);
+
     img.LoadFile(this->pic_fullname);
     w = img.GetWidth();
     h = img.GetHeight();
