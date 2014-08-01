@@ -24,12 +24,12 @@ DemoFrame::DemoFrame(const wxString &title,wxSize &_size)
     //wxWindow::SetWindowStyleFlag(wxFRAME_NO_TASKBAR); //无标题栏
     wxWindow::SetClientSize(500,500);  //改变窗口大小
 
-    {// load a jpeg picture here use wxStaticBitmap
+    //{// load a jpeg picture here use wxStaticBitmap
         wxImage::AddHandler(new wxJPEGHandler);
         wxImage img;
         img.LoadFile(_T("d:\\sun.jpg"),wxBITMAP_TYPE_JPEG);
         wxStaticBitmap *static_bitmap = new wxStaticBitmap(this,wxID_ANY,wxBitmap(img),wxDefaultPosition,wxDefaultSize);
-    }
+    //}
 
     wxSizer *sizer = new wxBoxSizer(wxVERTICAL);
     this->SetSizer(sizer);
