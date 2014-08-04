@@ -22,10 +22,24 @@ mainWindow::mainWindow( wxWindow* parent, wxWindowID id, const wxString& title, 
 	
 	this->SetMenuBar( menuBar );
 	
-	topBoxSizer = new wxBoxSizer( wxVERTICAL );
+	topSizer = new wxFlexGridSizer( 0, 2, 0, 0 );
+	topSizer->SetFlexibleDirection( wxHORIZONTAL );
+	topSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	
+	picSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Original Picture") ), wxVERTICAL );
+	
+	picSizer->SetMinSize( wxSize( 300,300 ) ); 
+	
+	topSizer->Add( picSizer, 1, wxEXPAND, 5 );
+	
+	colorSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, wxT("Overall Color") ), wxVERTICAL );
+	
+	colorSizer->SetMinSize( wxSize( 100,100 ) ); 
+	
+	topSizer->Add( colorSizer, 1, wxALIGN_RIGHT|wxALIGN_TOP|wxFIXED_MINSIZE, 5 );
 	
 	
-	this->SetSizer( topBoxSizer );
+	this->SetSizer( topSizer );
 	this->Layout();
 	
 	this->Centre( wxBOTH );

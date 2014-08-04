@@ -70,14 +70,57 @@ void myWindow::OnOpenFile(wxCommandEvent &evt)
     img.LoadFile(this->pic_fullname);
     w = img.GetWidth();
     h = img.GetHeight();
-    if(w>800 || h>800){
-        w/=(w/800);
-        h/=(h/800);
-    }
-    wxWindow::SetClientSize(w,h);
-    wxStaticBitmap *staticBitmap = new wxStaticBitmap(this,wxID_ANY,wxBitmap(img.Scale(w,h)),wxDefaultPosition,wxDefaultSize);
-    this->topBoxSizer->Add(staticBitmap,wxSizerFlags().Center());
 
+    DEBUG_PRINT_LINE();
+    int data_size = w*h*3;
+    int pixelNum = w*h;
+    int scale = 1;
+    unsigned char *data = (unsigned char *)malloc(data_size);
+
+    printf("Pic size : %d x %d\n",w,h);
+    const unsigned char *rgb_data = img.GetData();
+    memcpy(data,rgb_data,data_size);
+
+    scale = w>400?w/400:1;
+
+    w/=scale;
+    h/=scale;
+
+    printf("Pic size after scale(%d) : %d x %d\n",scale,w,h);
+    wxStaticBitmap *staticBitmap = new wxStaticBitmap(this,wxID_ANY,wxBitmap(img.Scale(w,h)),wxDefaultPosition,wxDefaultSize);
+
+    //return ;
+    unsigned int averageRed=0,averageGreen=0,averageBlue=0;
+    int i = 0;
+    for(; i<data_size; i+=3){
+        averageRed += (unsigned char)data[i];
+        averageGreen += (unsigned char)data[i+1];
+        averageBlue += (unsigned char)data[i+2];
+    }
+    printf("i=%d,averageRed-averageGreen-averageBlue : %d-%d-%d\n",i,averageRed,averageGreen,averageBlue);
+    averageRed/=pixelNum;
+    averageGreen/=pixelNum;
+    averageBlue/=pixelNum;
+    printf("Average RGB: %d-%d-%d\n",averageRed,averageGreen,averageBlue);
+    DEBUG_PRINT_LINE();
+    wxImage img2(100,100,false);
+    unsigned char *averageRgb = (unsigned char *)malloc(100*100*3);
+
+    for(i=0; i<30000; i+=3){
+        averageRgb[i]=averageRed;
+        averageRgb[i+1]=averageGreen;
+        averageRgb[i+2]=averageBlue;
+    }
+    img2.SetData(averageRgb);
+
+    DEBUG_PRINT_LINE();
+
+    wxStaticBitmap *staticColorBitmap = new wxStaticBitmap(this,wxID_ANY,wxBitmap(img2),wxDefaultPosition,wxDefaultSize);
+    this->colorSizer->Add(staticColorBitmap,wxSizerFlags().Center().FixedMinSize());
+
+    this->picSizer->Add(staticBitmap,wxSizerFlags().Center());
+    this->picSizer->SetItemMinSize(staticBitmap, w, h);
+    wxWindow::SetClientSize(w+120,h+30);
 }
 
 myWindow::myWindow(const wxString &title)
