@@ -51,6 +51,7 @@ void myWindow::OnExit(wxCommandEvent &evt)
     DEBUG_PRINT_LINE();
     this->Destroy();
 }
+
 void myWindow::OnOK(wxCommandEvent &evt)
 {
     int Red = this->spinCtrlRed->GetValue();
@@ -65,7 +66,12 @@ void myWindow::OnOK(wxCommandEvent &evt)
         data[i+2]=Blue;
     }
     this->custColorImg->SetData(data);
-    //free(data);
+    /*
+        After this call(wxImage::SetData())
+        the pointer to the data is owned
+        by the wxImage object, that will be
+        responsible for deleting it.
+    */
 
     this->custColorBitmap->SetBitmap(wxBitmap(*this->custColorImg));
 }
@@ -78,7 +84,10 @@ void myWindow::OnOpenFile(wxCommandEvent &evt)
                                          |PNG Files(*.png)|*.png\
                                          |All files(*.*)|*.*",
 									wxFD_OPEN, wxDefaultPosition);
-    //使用ShowModal显示对话框时,当用户按下OK时返回wxID_OK,其它情况返回wxID_CANCEL.
+    /*
+        使用ShowModal显示对话框时,当用户按下OK时返回wxID_OK,
+        其它情况返回wxID_CANCEL.
+    */
     if(dlg->ShowModal()==wxID_OK)
     {
         this->pic_fullname = dlg->GetPath();
@@ -126,8 +135,8 @@ void myWindow::OnOpenFile(wxCommandEvent &evt)
         averageGreen += (unsigned char)data[i+1];
         averageBlue += (unsigned char)data[i+2];
     }
-    //free(data);
-    printf("i=%d,averageRed-averageGreen-averageBlue : %d-%d-%d\n",i,averageRed,averageGreen,averageBlue);
+    free(data);
+
     averageRed/=pixelNum;
     averageGreen/=pixelNum;
     averageBlue/=pixelNum;
@@ -141,7 +150,13 @@ void myWindow::OnOpenFile(wxCommandEvent &evt)
         averageRgb[i+2]=averageBlue;
     }
     this->averageColorImg->SetData(averageRgb);
-    //free(averageRgb);
+    /*
+        After this call(wxImage::SetData())
+        the pointer to the data is owned
+        by the wxImage object, that will be
+        responsible for deleting it.
+    */
+
     this->averageColorBitmap->SetBitmap(wxBitmap(*this->averageColorImg));
 
     wxString value;
@@ -168,9 +183,9 @@ myWindow::myWindow(const wxString &title)
     this->averageColorImg = new wxImage(100,100,false);
     this->custColorImg = new wxImage(100,100,false);
 
-    this->originalBitmap = new wxStaticBitmap(this,wxID_ANY,wxBitmap(*this->originalImg),wxDefaultPosition,wxDefaultSize);
-    this->averageColorBitmap = new wxStaticBitmap(this,wxID_ANY,wxBitmap(*this->averageColorImg),wxDefaultPosition,wxDefaultSize);
-    this->custColorBitmap = new wxStaticBitmap(this,wxID_ANY,wxBitmap(*this->custColorImg),wxDefaultPosition,wxDefaultSize);
+    this->originalBitmap = new wxStaticBitmap(this,wxID_ANY,wxBitmap(*this->originalImg));
+    this->averageColorBitmap = new wxStaticBitmap(this,wxID_ANY,wxBitmap(*this->averageColorImg));
+    this->custColorBitmap = new wxStaticBitmap(this,wxID_ANY,wxBitmap(*this->custColorImg));
 
     this->colorSizer->Prepend(averageColorBitmap,wxSizerFlags().Center().FixedMinSize());
 
