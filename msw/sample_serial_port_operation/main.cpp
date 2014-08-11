@@ -4,7 +4,7 @@
 #include <windows.h>
 
 #define DEBUG_PRINT_LINE() printf("%s()L%d\n",__func__,__LINE__)
-
+#define BUFFER_SIZE 1024
 static int current_status;
 using namespace std;
 typedef struct{
@@ -14,30 +14,31 @@ typedef struct{
 DWORD WINAPI ThreadReadSerialPort(void *pM){
     HANDLE *hCom;
     //get serial port input
-    char lpInBuffer[1024];
-    DWORD dwBytesRead=1024;
+    char lpInBuffer[BUFFER_SIZE];
+    DWORD dwBytesRead=BUFFER_SIZE;
     BOOL bReadStatus;
     DWORD dwErrorFlags;
     COMSTAT ComStat;
     OVERLAPPED m_osRead;
     hCom = ((ARG_READ*)pM)->hCom;
     int err = 0;
-    while(current_status == 1){
-        memset(lpInBuffer,'\0',1024);
+    while(1){
+        memset(lpInBuffer,'\0',BUFFER_SIZE);
         //printf("[%d]Waiting for ...\n",__LINE__);
         ClearCommError(*hCom,&dwErrorFlags,&ComStat);
-        dwBytesRead = 1024;
-        dwBytesRead = ReadFile(*hCom,lpInBuffer,dwBytesRead,&dwBytesRead,&m_osRead);
+        dwBytesRead = BUFFER_SIZE;
+        //PurgeComm(*hCom,PURGE_RXCLEAR);//´ò¿ª¸ÃĞĞ»áµ¼ÖÂÒ»Ğ©Êı¾İ¶ªÊ§£¬why???
+        bReadStatus = ReadFile(*hCom,lpInBuffer,dwBytesRead,&dwBytesRead,&m_osRead);
         err = GetLastError();
         if(bReadStatus == FALSE){
-            printf("LastError:%d\n",err);
             if(err==ERROR_IO_PENDING){
                 GetOverlappedResult(*hCom,&m_osRead,&dwBytesRead,TRUE);
-                // GetOverlappedResultå‡½æ•°çš„æœ€åä¸€ä¸ªå‚æ•°è®¾ä¸ºTRUEï¼Œ
-                //å‡½æ•°ä¼šä¸€ç›´ç­‰å¾…ï¼Œç›´åˆ°è¯»æ“ä½œå®Œæˆæˆ–ç”±äºé”™è¯¯è€Œè¿”å›ã€‚
-                printf("------> %s",lpInBuffer);
-                printf("Read %d\n",dwBytesRead);
+                // GetOverlappedResultº¯ÊıµÄ×îºóÒ»¸ö²ÎÊıÉèÎªTRUE£¬
+                //º¯Êı»áÒ»Ö±µÈ´ı£¬Ö±µ½¶Á²Ù×÷Íê³É»òÓÉÓÚ´íÎó¶ø·µ»Ø¡£
+                printf("%s",lpInBuffer);
             }
+        }else{
+            printf("%s",lpInBuffer);
         }
     }
 }
@@ -45,15 +46,13 @@ DWORD WINAPI ThreadReadSerialPort(void *pM){
 int main()
 {
     HANDLE hCom;
-
-    cout << "Hello world!" << endl;
-
+    //´ò¿ªCOM4,ÏÂÃæÊÇÒÔÒì²½·½Ê½´ò¿ª(FILE_FLAG_OVERLAPPED)
     hCom = CreateFile("COM4",
 					GENERIC_READ|GENERIC_WRITE,
-					0, //ç‹¬å æ–¹å¼
+					0, //¶ÀÕ¼·½Ê½
 					NULL,
-					OPEN_EXISTING, //æ‰“å¼€è€Œä¸æ˜¯åˆ›å»º
-					FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED, //å¼‚æ­¥
+					OPEN_EXISTING, //´ò¿ª¶ø²»ÊÇ´´½¨
+					FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED, //Òì²½
 					NULL);
 	if(hCom == INVALID_HANDLE_VALUE){
 		DEBUG_PRINT_LINE();
@@ -66,47 +65,61 @@ int main()
 	GetCommState(hCom,&dcb);
     dcb.BaudRate=115200;
     dcb.ByteSize=8;
-	dcb.Parity=NOPARITY; //æ— å¥‡å¶æ ¡éªŒä½
-	dcb.StopBits=TWOSTOPBITS; //ä¸¤ä¸ªåœæ­¢ä½
+	dcb.Parity=NOPARITY; //ÎŞÆæÅ¼Ğ£ÑéÎ»
+	dcb.StopBits=TWOSTOPBITS; //Á½¸öÍ£Ö¹Î»
 	SetCommState(hCom,&dcb);
 
-	PurgeComm(hCom,PURGE_TXCLEAR|PURGE_RXCLEAR);//åœ¨è¯»å†™ä¸²å£ä¹‹å‰ï¼Œè¿˜è¦ç”¨PurgeComm()å‡½æ•°æ¸…ç©ºç¼“å†²åŒº
-/*  // å†™æ•°æ®åˆ°ä¸²å£
-	char lpOutBuffer[100];
-	memset(lpOutBuffer,'0',100);
-	memcpy(lpOutBuffer,"hello world\n",12);
-	DWORD dwBytesWrite=100;
-	COMSTAT ComStat;
-	DWORD dwErrorFlags;
-	BOOL bWriteStat;
-	ClearCommError(hCom,&dwErrorFlags,&ComStat);
-	bWriteStat=WriteFile(hCom,lpOutBuffer,12,&dwBytesWrite,NULL);
-	if(!bWriteStat)
-	{
-	   	DEBUG_PRINT_LINE();
-	   	printf("WriteFile ERR:%d\n",GetLastError());
-	}
-*/
+	PurgeComm(hCom,PURGE_TXCLEAR|PURGE_RXCLEAR);//ÔÚ¶ÁĞ´´®¿ÚÖ®Ç°£¬»¹ÒªÓÃPurgeComm()º¯ÊıÇå¿Õ»º³åÇø
+
     current_status=1;
     ARG_READ arg;
     arg.hCom=&hCom;
     HANDLE handle = CreateThread(NULL, 0, ThreadReadSerialPort, &arg, 0, NULL);
 
-    while(1){
-        printf("[%d]Waiting for ...\n",__LINE__);
-        scanf("%d",&current_status);
-        if(current_status == 0) break;
+    char lpOutBuffer[BUFFER_SIZE];
+    DWORD dwBytesWrite=0;
+    COMSTAT ComStat;
+    DWORD dwErrorFlags;
+    BOOL bWriteStat;
+    OVERLAPPED m_osWrite;
+    int err = 0;
 
+    //³õÊ¼»¯overlaooped½á¹¹£¡£¡//·ñÔòWriteFile(hCom,...)»áGetLastError()==6£¬ÎŞĞ§¾ä±ú
+    m_osWrite.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    m_osWrite.Offset =  0;
+    m_osWrite.OffsetHigh =  0;
+
+    while(1){
+        memset(lpOutBuffer,'\0',BUFFER_SIZE);
+        //printf("[%d]Waiting for ...\n",__LINE__);
+        fgets(lpOutBuffer,BUFFER_SIZE,stdin);
+        dwBytesWrite = strlen(lpOutBuffer);
+        //printf("input[%d]: %s\n",dwBytesWrite,lpOutBuffer);
+        ClearCommError(hCom,&dwErrorFlags,&ComStat);
+        PurgeComm(hCom,PURGE_TXCLEAR);//ÔÚ¶ÁĞ´´®¿ÚÖ®Ç°£¬»¹ÒªÓÃPurgeComm()º¯ÊıÇå¿Õ»º³åÇø
+        /*
+		PURGE_TXABORT     ÖĞ¶ÏËùÓĞĞ´²Ù×÷²¢Á¢¼´·µ»Ø£¬¼´Ê¹Ğ´²Ù×÷»¹Ã»ÓĞÍê³É¡£
+		PURGE_RXABORT     ÖĞ¶ÏËùÓĞ¶Á²Ù×÷²¢Á¢¼´·µ»Ø£¬¼´Ê¹¶Á²Ù×÷»¹Ã»ÓĞÍê³É¡£
+		PURGE_TXCLEAR     Çå³ıÊä³ö»º³åÇø
+		PURGE_RXCLEAR     Çå³ıÊäÈë»º³åÇø
+        */
+        bWriteStat = WriteFile(hCom,lpOutBuffer,dwBytesWrite,&dwBytesWrite,&m_osWrite);
+        err = GetLastError();
+        //printf("Last err: %d \n",err);
+        if(bWriteStat==FALSE)
+        {
+            if(err==ERROR_IO_PENDING)
+            {
+                WaitForSingleObject(m_osWrite.hEvent,1000);
+            }
+        }
+
+        if(strncmp(lpOutBuffer,"exit",4) == 0) {
+            TerminateThread(handle,0);
+            break;
+        }
     }
     WaitForSingleObject(handle, INFINITE);
-
-	PurgeComm(hCom, PURGE_TXABORT|PURGE_RXABORT|PURGE_TXCLEAR|PURGE_RXCLEAR);
-	/*
-		PURGE_TXABORT     ä¸­æ–­æ‰€æœ‰å†™æ“ä½œå¹¶ç«‹å³è¿”å›ï¼Œå³ä½¿å†™æ“ä½œè¿˜æ²¡æœ‰å®Œæˆã€‚
-		PURGE_RXABORT     ä¸­æ–­æ‰€æœ‰è¯»æ“ä½œå¹¶ç«‹å³è¿”å›ï¼Œå³ä½¿è¯»æ“ä½œè¿˜æ²¡æœ‰å®Œæˆã€‚
-		PURGE_TXCLEAR     æ¸…é™¤è¾“å‡ºç¼“å†²åŒº
-		PURGE_RXCLEAR     æ¸…é™¤è¾“å…¥ç¼“å†²åŒº
-	*/
 
     CloseHandle(hCom);
     return 0;
