@@ -5,7 +5,7 @@
 
 #define DEBUG_PRINT_LINE() printf("%s()L%d\n",__func__,__LINE__)
 #define BUFFER_SIZE 1024
-static int current_status;
+
 using namespace std;
 typedef struct{
     HANDLE *hCom;
@@ -42,10 +42,93 @@ DWORD WINAPI ThreadReadSerialPort(void *pM){
         }
     }
 }
+/*
+    CtrlHandler() 用来处理Console收到的信号:
+    CTRL_C_EVENT
+    CTRL_BREAK_EVENT
+    CTRL_CLOSE_EVENT
+    CTRL_LOGOFF_EVENT
+    CTRL_SHUTDOWN_EVENT
 
+    See: SetConsoleCtrlHandler()
+*/
+BOOL CtrlHandler(DWORD fdwCtrlType)
+{
+  switch( fdwCtrlType )
+  {
+    // Handle the CTRL-C signal.
+    case CTRL_C_EVENT:
+      printf( "Ctrl-C event\n\n" );
+      Beep( 750, 300 );
+      return( TRUE );
+
+    // CTRL-CLOSE: confirm that the user wants to exit.
+    case CTRL_CLOSE_EVENT:
+      Beep( 600, 200 );
+      printf( "Ctrl-Close event\n\n" );
+      return( TRUE );
+
+    // Pass other signals to the next handler.
+    case CTRL_BREAK_EVENT:
+      Beep( 900, 200 );
+      printf( "Ctrl-Break event\n\n" );
+      return FALSE;
+
+    case CTRL_LOGOFF_EVENT:
+      Beep( 1000, 200 );
+      printf( "Ctrl-Logoff event\n\n" );
+      return FALSE;
+
+    case CTRL_SHUTDOWN_EVENT:
+      Beep( 750, 500 );
+      printf( "Ctrl-Shutdown event\n\n" );
+      return FALSE;
+
+    default:
+      return FALSE;
+  }
+}
+
+DWORD WINAPI threadHotKey(void *pM)
+{
+    //HWND hConsole = GetActiveWindow();
+    HWND *hConsole = (HWND *)pM;
+    MSG msg = {0};
+    //MOD_NOREPEAT --> From win7
+    //RegisterHotKey(*hConsole,1,MOD_CONTROL,0x42);//'b',不同SDK中定义的字符值可能不同,所有这里直接用数值表示字符
+    //RegisterHotKey(*hConsole,2,MOD_CONTROL,0x43);//'c'
+    /*
+        RegisterHotKey() Defines a system-wide hot key
+        该函数会注册全局hot key处理函数，也就是会拦截所有其他窗口的hot key
+        所以，现在先将Ctrl + c交给 CtrlHandler() 处理.
+    */
+
+    printf("Enter threadHotKey\n");
+    printf("\'a\'=%#x\n",'a');
+    while(GetMessage(&msg,NULL,0,0)!=0){
+        printf("Get message:%d,wParam:%d\n ",msg.message,msg.wParam);
+        if(msg.message == WM_HOTKEY){
+            switch(msg.wParam){
+            default:
+                printf("wParam:%#x\n",msg.wParam);
+            }
+        }
+    }
+}
 int main()
 {
     HANDLE hCom;
+    HWND hConsole = GetActiveWindow();
+
+    /*
+       BOOL WINAPI SetConsoleCtrlHandler(PHANDLER_ROUTINE HandlerRoutine,BOOL Add);
+       设置Console 的信号处理函数，Add==TRUE-->添加，Add==FALSE-->移除
+
+       HandlerRoutine() :若其返回TRUE,当前收到的消息不传递给其他CtrlHandler，
+       若返回FALSE,当前signal会继续传给当前console 的其他CtrlHandler处理。
+    */
+    SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler,TRUE);
+
     //打开COM4,下面是以异步方式打开(FILE_FLAG_OVERLAPPED)
     hCom = CreateFile("COM4",
 					GENERIC_READ|GENERIC_WRITE,
@@ -71,10 +154,11 @@ int main()
 
 	PurgeComm(hCom,PURGE_TXCLEAR|PURGE_RXCLEAR);//在读写串口之前，还要用PurgeComm()函数清空缓冲区
 
-    current_status=1;
     ARG_READ arg;
     arg.hCom=&hCom;
     HANDLE handle = CreateThread(NULL, 0, ThreadReadSerialPort, &arg, 0, NULL);
+
+    HANDLE hThreadHotKey = CreateThread(NULL, 0, threadHotKey, &hConsole, 0, NULL);
 
     char lpOutBuffer[BUFFER_SIZE];
     DWORD dwBytesWrite=0;
@@ -120,7 +204,6 @@ int main()
         }
     }
     WaitForSingleObject(handle, INFINITE);
-
     CloseHandle(hCom);
     return 0;
 }
