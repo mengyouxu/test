@@ -9,7 +9,7 @@
 int main(int argc, char *argv[])
 {
 	int socket_fd;
-	struct sockaddr_in dest;
+	struct sockaddr_in dest;//include <netinet/in.h>
 	char buffer[1024];
 	int ret_val = 0;
 	socket_fd = socket(AF_INET,SOCK_STREAM,0);
