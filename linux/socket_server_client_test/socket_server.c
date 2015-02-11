@@ -1,11 +1,20 @@
 /*This is a Linux edition */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <errno.h>
+#include <db.h>
+
+#include "client_info.h"
+
+void db_print_err(int ret,int line)
+{
+	if(ret != 0){
+		printf("L%d ERROR: %s\n",line,db_strerror(ret));
+	}
+}
 
 int main(int argc, char *argv[])
 {
@@ -14,6 +23,10 @@ int main(int argc, char *argv[])
 	int ret_val = 0;
 	char buffer[46] = {0};
 	char data[4096] = {0};
+	DB *dbp;
+	DBT db_key, db_data;
+	unsigned int flags = 0;
+	struct client_info aclient_info;
 
 	sockaddr_server.sin_family = AF_INET;
 	sockaddr_server.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -37,13 +50,44 @@ int main(int argc, char *argv[])
 		perror("listen");
 		return errno;
 	}
+	flags = DB_CREATE;
+	ret_val = db_create(&dbp,NULL,0);
+	db_print_err(ret_val,__LINE__);
+	ret_val = dbp->open(dbp,NULL,"client_list.db",NULL,DB_HASH,flags,0);
+	db_print_err(ret_val,__LINE__);
+
 	while(1){
 		ret_val = sizeof(sockaddr_client);
 		socket_client = accept(socket_server,(struct sockaddr*)&sockaddr_client,&ret_val);
-		printf("addr:%s:%d\n",inet_ntop(AF_INET,&sockaddr_client.sin_addr,buffer,46),ntohs(sockaddr_client.sin_port));
-		ret_val = recv(socket_client,data,4096,0);
-		data[ret_val] = '\0';;
-		printf("recv: %s\n",data);
+		memset(data,0,1024);
+		ret_val = recv(socket_client,data,1024,0);
+		
+		memcpy(&aclient_info,data,256);
+		memset(buffer,'\0',16);
+		memset(&db_key,0,sizeof(DBT));
+		memset(&db_data,0,sizeof(DBT));
+		
+		inet_ntop(AF_INET,&sockaddr_client.sin_addr,buffer,16);
+		aclient_info.port = ntohs(sockaddr_client.sin_port);
+		strcpy(aclient_info.addr,buffer);
+		aclient_info.name[127] = '0';
+		printf("name[127] has been set to 0, name: %s\n",aclient_info.name);
+		printf("addr->%s:%u\n",aclient_info.addr,aclient_info.port);
+		db_key.size = 128;
+		db_key.data = aclient_info.name;
+
+		db_data.size = sizeof(struct client_info);
+		db_data.data = &aclient_info;
+		ret_val = dbp->put(dbp,NULL,&db_key,&db_data,DB_NOOVERWRITE);
+		db_print_err(ret_val,__LINE__);
+		dbp->sync(dbp,0);
+		
+		ret_val = send(socket_client, "abcdefghijklmnopqrstuvwxyz",26,0);
+		printf("send %d bytes\n",ret_val);
+	}
+
+	if(dbp != NULL){
+		dbp->close(dbp,0);
 	}
 	close(socket_server);
 	close(socket_client);

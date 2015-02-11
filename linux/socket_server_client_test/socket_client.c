@@ -33,8 +33,10 @@ int main(int argc, char *argv[])
 		perror("connect");
 		return errno;
 	}
-	send(socket_fd,argv[1],9,0);
-	printf("%s\n",argv[1]);
+	ret_val = send(socket_fd,argv[2],strlen(argv[2])+1,0);
+	printf("send %d bytes\n",ret_val);
+	ret_val = recv(socket_fd, buffer,1024,0);
+	printf("recv %d bytes : %s\n",ret_val,buffer); 
 	close(socket_fd);
 	return 0;
 }
